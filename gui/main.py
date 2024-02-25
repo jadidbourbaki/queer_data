@@ -44,6 +44,9 @@ class MainWindow(QMainWindow):
         self.no_button = QPushButton("no", self)
         self.no_button.move(300, 550)
 
+        self.query_button = QPushButton("query", self)
+        self.query_button.move(400, 550)
+
 
 
 app = QApplication(sys.argv)
