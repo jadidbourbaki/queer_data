@@ -2,33 +2,54 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/AllenDang/giu"
+	"os"
 )
 
-var (
-	name string
-)
-
-func onSubmit() {
-	fmt.Println("Name:", name)
-}
-
-func loop() {
-	giu.SingleWindow().Layout(
-		giu.Label("Can Data Be Queer?"),
-		giu.InputText(&name),
-		giu.Button("submit").OnClick(onSubmit),
-	)
-}
+const bitCount uint = 1000
+const hashCount uint = 5
 
 func main() {
 
-	client := New(100, 5)
-	bloomFilter := client.AddName("TEST NAME")
+	args := os.Args
 
-	SendBloomFilter(bloomFilter)
+	if len(args) != 3 {
+		fmt.Println("usage:", args[0], "[insert | query] <name>")
+		return
+	}
 
-	// window := giu.NewMasterWindow("[Data Privacy] Can Data Be Queer?", 800, 600, giu.MasterWindowFlagsNotResizable)
-	// window.Run(loop)
+	command := args[1]
+	name := args[2]
+
+	if command != "insert" && command != "query" {
+		fmt.Println("invalid command")
+		return
+	}
+
+	if command == "insert" {
+		client := New(bitCount, hashCount)
+
+		fmt.Println("adding name:", name)
+		bloomFilter := client.AddName(name)
+
+		response, err := SendBloomFilter(bloomFilter)
+
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("response:")
+		fmt.Println(response)
+		return
+	}
+
+	// query
+	response, err := QueryName(name)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("response:")
+	fmt.Println(response)
+
 }

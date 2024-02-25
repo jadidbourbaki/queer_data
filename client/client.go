@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/bits-and-blooms/bloom/v3"
@@ -26,34 +27,66 @@ func (c *Client) AddName(name string) *bloom.BloomFilter {
 	return bloomFilter
 }
 
-func SendBloomFilter(bloomFilter *bloom.BloomFilter) error {
-	json, err := bloomFilter.MarshalJSON()
+func QueryName(name string) (string, error) {
+	url := "http://localhost:8090/query"
+	fmt.Println("sending to url:", url)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(name)))
 
 	if err != nil {
-		return err
+		return "", err
 	}
-
-	url := "http://localhost:8090/queerdata"
-	fmt.Println("Sending to URL:", url)
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
-
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("X-Custom-Header", "BloomFilter")
-	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return "", err
 	}
 
 	defer resp.Body.Close()
 
-	return nil
+	return string(body), nil
+
+}
+
+func SendBloomFilter(bloomFilter *bloom.BloomFilter) (string, error) {
+	json, err := bloomFilter.MarshalJSON()
+
+	if err != nil {
+		return "", err
+	}
+
+	url := "http://localhost:8090/insert"
+	fmt.Println("sending to url:", url)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return "", err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	return string(body), nil
 
 }
